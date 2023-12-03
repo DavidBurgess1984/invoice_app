@@ -12,8 +12,8 @@ interface SelectInputProps {
 const SelectInput: React.FC<SelectInputProps> = ({ labelText,  value, onInputChange }) =>  {
   return (
     <div className="w-full flex flex-col relative">
-        <label className="body text-inv-7E88C3 mb-1">{labelText}</label>
-        <select onChange={(e) => onInputChange(parseInt(e.target.value))} className="bg-inv-li appearance-none rounded border border-DFE3FA p-2 heading-s text-inv-0C0E16" value={value}  >
+        <label className="body text-primary-darker mb-1">{labelText}</label>
+        <select onChange={(e) => onInputChange(parseInt(e.target.value))} className="bg-panel-bg appearance-none rounded border border-DFE3FA p-2 heading-s text-heading-font" value={value}  >
           <option value={30}>Next 30 Days</option>
           <option value={14}>Next 14 Days</option>
         </select>

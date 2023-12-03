@@ -14,16 +14,16 @@ const TextInput: React.FC<TextInputProps> = ({ labelText, placeholder, value, er
   let labelClassName = "body  mb-1 "
 
   if(typeof errors[id] !== 'undefined'){
-    labelClassName += " text-inv-EC5757"
+    labelClassName += " text-delete-bg"
   } else {
-    labelClassName += " text-inv-7E88C3"
+    labelClassName += " text-primary-darker"
   }
   
   return (
     <div className="w-full flex flex-col ">
       <label className={labelClassName }>{labelText}</label>
       <input
-        className="rounded border border-DFE3FA p-2 bg-inv-li text-inv-0C0E16"
+        className="rounded border border-DFE3FA p-2 bg-panel-bg text-heading-font"
         type="text"
         placeholder={placeholder}
         value={value}

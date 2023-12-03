@@ -149,11 +149,11 @@ export default function InvoiceForm() {
           <div className="pl-8 pr-4 py-4 flex flex-col h-full">
             <div className="py-8">
               <button className="text-3xl float-right mr-4" onClick={(e) => toggleInvoiceFormVisible(!isInvoiceFormVisible)}>&times;</button>
-              <h2 className="heading-m mb-4 text-inv-0C0E16">New Invoice</h2>
+              <h2 className="heading-m mb-4 text-heading-font">New Invoice</h2>
               
             </div>
             <div className="overflow-y-scroll flex-grow pr-4">
-              <p className="text-inv-7C5DFA heading-s mb-4">Bill From</p>
+              <p className="text-primary heading-s mb-4">Bill From</p>
               <div className="grid grid-cols-2 lg:grid-cols-3 grid-rows-2 gap-2">
                 <div className="row-span-1 col-span-3 my-2">
                   <TextInput
@@ -198,7 +198,7 @@ export default function InvoiceForm() {
               </div>
 
               <div className=" py-4">
-                <p className="text-inv-7C5DFA heading-s mb-4">Bill To</p>
+                <p className="text-primary heading-s mb-4">Bill To</p>
                 <div className="grid grid-cols-2 lg:grid-cols-3 grid-rows-2 gap-2">
                   <div className="row-span-1 col-span-3 my-2">
                     <TextInput
@@ -284,9 +284,9 @@ export default function InvoiceForm() {
                 </div>
               </div>
               <div className="py-4">
-                <p className="text-inv-7C5DFA heading-s mb-4">Item List</p>
+                <p className="text-primary heading-s mb-4">Item List</p>
                 <div className="relative w-full ">
-                  <table className="text-inv-7E88C3 table-fixed w-full text-sm text-left body">
+                  <table className="text-primary-darker table-fixed w-full text-sm text-left body">
                     <thead className="">
                       <tr>
                         <th scope="col" className="pr-2 py-2 body w-[50%]">
@@ -322,7 +322,7 @@ export default function InvoiceForm() {
                       {invoiceItems.map((item,i) => (
                        <tr className="heading-s" key={"invoice-item-"+i}>
                         <td scope="row" className="pr-2 py-2">
-                          <span className="text-inv-0C0E16 ">
+                          <span className="text-heading-font ">
                             <TextInput
                               id={"invoice-item-name-"+i}
                               labelText=""
@@ -352,7 +352,7 @@ export default function InvoiceForm() {
                           />
                         </td>
                         <td className="px-2 py-2">
-                          <span className="text-inv-0C0E16 ">{item.price.length > 0 ? (parseFloat(item.price) * item.qty).toFixed(2) : 0 }</span>
+                          <span className="text-heading-font ">{item.price.length > 0 ? (parseFloat(item.price) * item.qty).toFixed(2) : 0 }</span>
                         </td>
                         <td>
                           <button onClick={(e) => removeInvoiceItem(i)}>
@@ -366,7 +366,7 @@ export default function InvoiceForm() {
                   </table>
                 </div>
                 <div className="py-4 mb-4 ">
-                  <button className="btn bg-inv-DFE3FA text-inv-7C5DFA justify-center text-center w-full " onClick={(e) => createInvoiceItem()}>
+                  <button className="btn bg-table-background text-primary justify-center text-center w-full " onClick={(e) => createInvoiceItem()}>
                     <Image src={PlusIcon} className="mr-1" alt="" />
                     Add New Item
                   </button>
@@ -374,15 +374,15 @@ export default function InvoiceForm() {
               </div>
             </div>
             <div className="flex pt-8">
-              <button className="btn bg-inv-edit-btn hover:bg-edit-bg-hover text-inv-7C5DFA justify-center text-center " onClick={(e) => toggleInvoiceFormVisible(!isInvoiceFormVisible)}>
+              <button className="btn bg-edit-btn hover:bg-edit-bg-hover text-primary justify-center text-center " onClick={(e) => toggleInvoiceFormVisible(!isInvoiceFormVisible)}>
                 Discard
               </button>
 
-              <button className="btn bg-draft-font text-inv-DFE3FA hover:bg-draft-bg-hover justify-center text-center ml-auto mr-2">
+              <button className="btn bg-draft-font text-table-background hover:bg-draft-bg-hover justify-center text-center ml-auto mr-2">
                 Save as Draft
               </button>
 
-              <button className="btn bg-inv-7C5DFA text-white justify-center text-center hover:bg-inv-9277FF duration-200">
+              <button className="btn bg-primary text-white justify-center text-center hover:bg-primary-light duration-200">
                 Save & Send
               </button>
             </div>

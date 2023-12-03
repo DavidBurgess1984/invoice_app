@@ -20,9 +20,9 @@ const DatePicker  = ({value,onDateChange,labelText}) => {
 
   return (
     <div className="w-full flex flex-col relative">
-        <label className="body text-inv-7E88C3 mb-1">{labelText}</label>
+        <label className="body text-primary-darker mb-1">{labelText}</label>
         <Datepicker 
-          inputClassName="p-2 rounded border border-DFE3FA heading-s w-full bg-inv-li text-inv-0C0E16" 
+          inputClassName="p-2 rounded border border-DFE3FA heading-s w-full bg-panel-bg text-heading-font" 
           asSingle={true} 
           useRange={false} 
           value={value} 
