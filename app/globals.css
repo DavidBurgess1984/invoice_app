@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=League+Spartan:wght@100;200;300;400;500;600;700;800;900&family=Mukta:wght@500&family=Nunito:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;0,1000;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900;1,1000&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -6,22 +8,132 @@
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 214, 219, 220;
   --background-end-rgb: 255, 255, 255;
+  --background: 248,248,251;
+  --primary: #7C5DFA;
+  --primary-light:#9277FF;
+  --primary-darker:#7E88C3;
+  --panel-font:#7E88C3;
+  --nav-background:#1E2139;
+  --table-background:#DFE3FA;
+  --secondary-font:#888EB0; 
+  --heading-font:#0C0E16;
+  --cost-summary:#0C0E16;
+  --delete-bg:#EC5757;
+  --delete-bg-hover:#FF9797;
+  --main-bg:#F8F8FB;
+  --back-btn:#F9FAFE;
+  --success-font:#33D69F;
+  --pending-font:#FF8F00;
+  --draft-font:#373B53;
+  --edit-bg:#F9FAFE;
+  --edit-bg-hover:#DFE3FA;
+  --edit-form-bg:#FFFFFF;
+  --invoice-li: rgb(255, 255, 255);
+  --success-bg:rgba(51, 214, 159, 0.05);
+  --pending-bg:rgba(255, 143, 0, 0.05);
+  --draft-bg:rgba(55, 59, 83, 0.05);
+  --draft-bg-hover:rgba(55, 59, 83, 0.9);
+  --lightbox-bg:rgba(55, 59, 83, 0.30);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
+
+html.dark {
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 0, 0, 0;
+  --background:20, 22, 36;
+  --invoice-li:rgb(30,33,57);
+  --secondary-font:rgb(255,255,255); 
+  --heading-font:rgb(255,255,255); 
+  --panel-font:rgb(255,255,255);
+  --table-background:rgb(37,41,69);
+  --edit-form-bg:rgb(20, 22, 36);
+}
+
+
+/* width */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 5px;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+  background:  rgb(var(--background));
+  height:100vh;
+  overflow-y: auto;
+}
+
+.heading-l{
+  @apply font-LeagueSpartan text-4xl font-bold tracking-tight
+}
+
+.heading-m{
+  @apply font-LeagueSpartan text-2xl font-bold tracking-tight
+}
+
+.heading-s{
+  @apply font-LeagueSpartan text-base font-bold 
+}
+
+.heading-s-variant{
+  @apply font-LeagueSpartan text-base font-bold leading-none
+}
+
+.body{
+  @apply font-LeagueSpartan text-base font-medium leading-normal
+}
+
+.body-variant{
+  @apply font-LeagueSpartan text-base font-medium leading-none
+}
+
+.btn {
+  @apply heading-s  rounded-full flex items-center px-8 py-4
+} 
+
+.btn-new{
+  @apply px-2 py-2 pr-4
+}
+
+.checkbox-container input:checked ~ .checkmark {
+  background-color: #7C5DFA;
+  border: #7C5DFA;
+
+}
+
+.checkmark:after {
+  content: "";
+  position: absolute;
+  display: none;
+}
+
+.checkbox-container input:checked ~ .checkmark:after {
+  display: block;
+}
+
+.checkbox-container .checkmark:after {
+  left: 6px;
+  top: 2px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 3px 3px 0;
+  
+  -webkit-transform: rotate(45deg);
+  -ms-transform: rotate(45deg);
+  transform: rotate(45deg);
 }
