@@ -9,6 +9,8 @@ import { useEffect, useRef, useState } from "react";
 import { DateRangeType,DateValueType } from "react-tailwindcss-datepicker";
 import NumberInput from "../elements/common/number-input";
 import { useLightbox } from "../providers/lightbox-provider";
+import ErrorPanel from "../elements/common/error-panel";
+import formInputMap from "./form-input-map";
 
 interface InvoiceItem {
   id:string,
@@ -228,17 +230,17 @@ export default function InvoiceForm() {
                       placeholder="10 Downing Street"
                       value={billToAddress}
                       onInputChange={setBillToAddress}
-                      errors={{}}
+                      errors={{"billToCity":"Please enter a value","billToAddress":"Please enter a value"}}
                     />
                   </div>
                   <div className="col-span-1 row-span-1 ">
                     <TextInput
                       id="billToCity"
-                      labelText="City"
-                      placeholder="London"
+                      labelText={formInputMap["billToCity"]["labelText"]}
+                      placeholder={formInputMap["billToCity"]["placeholder"]}
                       value={billToCity}
                       onInputChange={setBillToCity}
-                      errors={{"billToCity":"Please enter a value"}}
+                      errors={{"billToCity":"Please enter a value","billToAddress":"Please enter a value"}}
                     />
                   </div>
                   <div className="col-span-1  row-span-1 ">
@@ -262,6 +264,9 @@ export default function InvoiceForm() {
                     />
                   </div>
                 </div>
+              </div>
+              <div className="py-2">
+                <ErrorPanel errors={{"billToCity":"Please enter a value","billToAddress":"Please enter a value"}} toShow={["billToCity","billToAddress"]} />
               </div>
               <div className=" py-4">
                 <div className="grid grid-cols-4 grid-rows-2 gap-2">
