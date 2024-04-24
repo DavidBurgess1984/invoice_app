@@ -3,12 +3,41 @@
 import Image from "next/image";
 import ArrowDown from "../../assets/icon-arrow-down.svg";
 import {  useEffect, useRef, useState } from "react";
+import { useInvoice } from "../providers/invoice-provider";
+import { InvoiceFilters } from "../types/INVOICE_TYPE";
+
 
 export default function InvoiceStatusFilter() {
 
     const [dropdownOpen,toggleDropdownOpen] = useState(false);
+    const [activeFilters, setActiveFilters] = useState({
+      'draft':false,
+      'pending':false,
+      'paid':false
+    })
     const wrapperRef = useRef(null);
     useOutsideAlerter(wrapperRef);
+
+    const {getInvoices} = useInvoice()
+
+    
+    const toggleFilter = (filter: keyof InvoiceFilters) => {
+      let newFilters:InvoiceFilters = {...activeFilters}
+      newFilters[filter] = !activeFilters[filter]
+      let qString = '?'
+      let qStringData = []
+      for (let index in newFilters) {
+        if(newFilters[index as keyof typeof newFilters]){
+          qStringData.push("s[]="+index)
+        }
+        
+      }
+
+      qString += qStringData.join("&")
+
+      getInvoices(qString)
+      setActiveFilters(newFilters)
+    }
 
     function useOutsideAlerter(ref: React.RefObject<HTMLInputElement>) {
         useEffect(() => {
@@ -53,6 +82,8 @@ export default function InvoiceStatusFilter() {
             <label className="select-none checkbox-container block relative cursor-pointer pl-6">
               Draft
               <input
+                onChange={(e) => toggleFilter('draft')}
+                checked={activeFilters.draft}
                 className="absolute opacity-0 left-0 top-0 cursor-pointer"
                 type="checkbox"
               />
@@ -63,6 +94,8 @@ export default function InvoiceStatusFilter() {
             <label className="select-none checkbox-container block relative cursor-pointer pl-6">
               Pending
               <input
+                onChange={(e) => toggleFilter('pending')}
+                checked={activeFilters.pending}
                 className="absolute opacity-0 left-0 top-1 cursor-pointer"
                 type="checkbox"
               />
@@ -73,6 +106,8 @@ export default function InvoiceStatusFilter() {
             <label className="select-none checkbox-container block relative cursor-pointer pl-6">
               Paid
               <input
+                onChange={(e) => toggleFilter('paid')}
+                checked={activeFilters.paid}
                 className="absolute opacity-0 left-0 top-0 cursor-pointer"
                 type="checkbox"
               />

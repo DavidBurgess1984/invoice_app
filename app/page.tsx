@@ -6,43 +6,39 @@ import InvoiceStatusFilter from '@/src/elements/invoice-status-filter'
 import { Fragment, useEffect, useState } from 'react'
 import { useLightbox } from '@/src/providers/lightbox-provider'
 import Loading from '@/src/elements/loading'
+import { useInvoice } from '@/src/providers/invoice-provider'
+import EmptyInvoice from "../assets/empty-invoices.png";
 
 export default function Home() {
 
   const {toggleInvoiceFormVisible} = useLightbox()
-  const [loading,setLoading] = useState(true)
-  const [invoices,setInvoices] = useState([])
+
+  const {getInvoices, invoicesLoading, invoices} = useInvoice()
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch('/api/invoice');
-        const result = await response.json();
-        setInvoices(result);
-        setLoading(false)
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      }
-    };
-
-    fetchData();
+   
+    getInvoices("")
   }, []);
 
-  
+  let invoiceDisplay
 
+  if(invoices.length > 0){
+    invoiceDisplay =<InvoiceList invoices={invoices}/>
+  } else {
+    invoiceDisplay =
+      <div className='flex mt-[10%]'>
+          <Image src={EmptyInvoice} alt="no-invoice" className="block m-auto z-10" />
+      </div>
+    
+  }
 
   return (
       <Fragment>
-        {loading && 
-          <Loading />
-        }
-
-        {!loading && 
           <Fragment>
               <div className='mt-8 mb-6 md:my-12 flex justify-between items-center'>
                 <div >
                   <h1 className='heading-l text-heading-font pb-1'>Invoices</h1>
-                  <p className='body text-primary-darker'><span className="hidden md:inline-block">There are</span> 7 <span className="hidden md:inline-block">total</span> invoices</p>
+                  <p className='body text-primary-darker'><span className="hidden md:inline-block">There are</span> {invoices.length} <span className="hidden md:inline-block">total</span> invoices</p>
                 </div>
                 
                 <InvoiceStatusFilter />
@@ -56,10 +52,13 @@ export default function Home() {
                   </button>
                 </div>
               </div>
-
-              <InvoiceList invoices={invoices}/>
+              {invoicesLoading ? 
+                <Loading />
+                :
+                invoiceDisplay
+              }
+              
           </Fragment>
-        }
     </Fragment>
   )
 }

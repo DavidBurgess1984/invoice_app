@@ -1,0 +1,50 @@
+// schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL") // uses connection pooling
+  directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
+}
+
+model InvoiceItem {
+  id    String @id @default(cuid())
+  name  String
+  qty   Int?
+  price Float?
+
+  // Specify unique name for the foreign key constraint
+  invoice   Invoice? @relation(name: "ItemInvoice", fields: [invoiceId], references: [id], map: "invoiceId")
+  invoiceId String?
+
+  // Opposite relation field
+  @@map(name: "invoice_items")
+}
+
+model Invoice {
+  id                  String        @id @default(cuid())
+  slug                String        @unique
+  bill_from_address   String
+  bill_from_city      String
+  bill_from_postcode  String
+  bill_from_country   String
+  bill_to_name        String
+  bill_to_email       String        @unique
+  bill_to_address     String
+  bill_to_city        String
+  bill_to_postcode    String
+  bill_to_country     String
+  invoice_date        DateTime
+  payment_terms       Int
+  project_description String
+  item_list           InvoiceItem[] @relation("ItemInvoice")
+  status              String
+  createdAt           DateTime      @default(now()) @map(name: "created_at")
+  updatedAt           DateTime      @updatedAt @map(name: "updated_at")
+
+  // Opposite relation field
+  @@map(name: "invoices")
+}

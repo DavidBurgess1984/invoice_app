@@ -5,22 +5,23 @@ import BinIcon from '../../assets/icon-delete.svg'
 import TextInput from '@/src/elements/common/text-input';
 import SelectInput from '@/src/elements/common/select-input';
 import DatePicker from '@/src/elements/common/date-picker';
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { DateRangeType,DateValueType } from "react-tailwindcss-datepicker";
 import NumberInput from "../elements/common/number-input";
 import { useLightbox } from "../providers/lightbox-provider";
 import ErrorPanel from "../elements/common/error-panel";
 import formInputMap from "./form-input-map";
+import { useInvoice } from "../providers/invoice-provider";
+import {InvoiceItemType, InvoiceType} from '../types/INVOICE_TYPE'
+import { useFlashMessage } from "../providers/flash-message-provider";
 
-interface InvoiceItem {
-  id:string,
-  name:string,
-  qty:number,
-  price:string
-}
 
 export default function InvoiceForm() {
 
+    const {invoice, getInvoice, getInvoices} = useInvoice();
+    const {setFlashMessage} = useFlashMessage();
+    const [errors, setErrors] = useState({})
+    
     const {isInvoiceFormVisible, toggleInvoiceFormVisible} =  useLightbox();
     const [billFromAddress,setBillFromAddress] = useState('')
     const [billFromCity,setBillFromCity] = useState('')
@@ -35,23 +36,74 @@ export default function InvoiceForm() {
     const [billToCountry,setBillToCountry] = useState('')
 
     const [billInvoiceDate,setBillInvoiceDate] = useState({
-        startDate:null,
-        endDate: null
+        startDate:null as string | null,
+        endDate: null as string | null
     })
     const [billToTerms,setBillToTerms] = useState(30)
     const [billToDescription,setBillToDescription] = useState("")
 
-    const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([]);
+    const [invoiceItems, setInvoiceItems] = useState<InvoiceItemType[]>([]);
+    const [status,setStatus] = useState("")
+    const [editBtnText,setEditButtonText] = useState('Save Changes');
+    const [draftBtnText,setDraftButtonText] = useState('Save as Draft');
+    const [saveSendBtnText,setSaveDraftButtonText] = useState('Save & Send');
+
+    useEffect(() => {
+
+      if(typeof invoice !== "undefined"){
+        setBillFromAddress(invoice.bill_from_address)
+        setBillFromCity(invoice.bill_from_city)
+        setBillFromPostcode(invoice.bill_from_postcode)
+        setBillFromCountry(invoice.bill_from_country)
+        setBillToAddress(invoice.bill_to_address)
+        setBillToCity(invoice.bill_to_city)
+        setBillToCountry(invoice.bill_to_country)
+        setBillToEmail(invoice.bill_to_email)
+        setBillToName(invoice.bill_to_name)
+        setBillToPostcode(invoice.bill_to_postcode)
+        setBillToTerms(invoice.payment_terms)
+        setBillToDescription(invoice.project_description)
+        setBillInvoiceDate({startDate:invoice.invoice_date,endDate:invoice.invoice_date})
+        setInvoiceItems(invoice.item_list)
+        setStatus(invoice.status)
+        
+      } else {
+        setBillFromAddress("")
+        setBillFromCity("")
+        setBillFromPostcode("")
+        setBillFromCountry("")
+        setBillToAddress("")
+        setBillToCity("")
+        setBillToCountry("")
+        setBillToEmail("")
+        setBillToName("")
+        setBillToPostcode("")
+        setBillToTerms(30)
+        setBillToDescription("")
+        setBillInvoiceDate({startDate:null,endDate:null})
+        setInvoiceItems([])
+      }
+    },[invoice])
 
     const handleInputChange = (id: string, field: string, value: string) => {
       const updatedData = invoiceItems.map((item) => {
         if(item.id === id){
           let newValue = value;
+
           if(field === "price"){
             // Regular expression to match numbers with up to 2 decimal places
-            const regex = /^\d*\.?\d{0,2}$/;
-            // If the input doesn't match the regex, keep the original item[field] value
-            newValue = value.match(regex) ? value : item[field]
+            let newFloatValue = 0.00
+
+            if(newValue.toString().length > 0){
+              newFloatValue =  parseFloat(parseFloat(newValue).toFixed(2))
+            }
+            
+            // const newFloatValue= parseFloat(newValue)
+            return { ...item, price: newFloatValue }
+          }
+          if(field === "qty"){
+            const newIntValue = parseInt(newValue)
+            return { ...item, [field]: newIntValue }
           }
           return { ...item, [field]: newValue }
         }
@@ -60,12 +112,137 @@ export default function InvoiceForm() {
       setInvoiceItems(updatedData);
     };
 
+    const createInvoice = (status:string) => {
+
+      setErrors({})
+      const slug = "dev-"+Date.now();
+      const invoiceDate = billInvoiceDate.startDate != null ? new Date(billInvoiceDate.startDate  ).toISOString()  :new Date().toISOString()
+
+      const invoiceData:InvoiceType = {
+        bill_from_address:billFromAddress,
+        bill_from_city:billFromCity,
+        bill_from_country:billFromCountry,
+        bill_from_postcode:billFromPostcode,
+        bill_to_name:billToName,
+        bill_to_email:billToEmail,
+        bill_to_address:billToAddress,
+        bill_to_city:billToCity,
+        bill_to_country:billToCountry,
+        bill_to_postcode:billToPostcode,
+        invoice_date:invoiceDate ,
+        payment_terms:billToTerms,
+        project_description:billToDescription,
+        status:status,
+        slug:slug,
+        item_list:invoiceItems
+      }
+
+      const saveData = async() => {
+
+        if(status == 'draft'){
+          setDraftButtonText("Saving...")
+        } else {
+          setSaveDraftButtonText("Saving...")
+        }
+        try {
+          const response = await fetch('/api/invoice',{
+            method:'POST', 
+            headers: {
+              'Content-Type': 'application/json', // Specify the content type as JSON
+            },
+            body: JSON.stringify(invoiceData), // Convert the object to JSON
+          });
+          const result = await response.json();
+
+          if(result.result == "failure"){
+            setErrors(result.errors)
+          } else {
+            toggleInvoiceFormVisible(false)
+            if(status == 'draft'){
+              setFlashMessage('Draft Invoice has been created')
+            } else {
+              setFlashMessage('Invoice has been created and sent')
+            }
+            getInvoices("")
+          }
+
+          if(status == 'draft'){
+            setDraftButtonText("Save as Draft")
+          } else {
+            setSaveDraftButtonText("Save & Send")
+          }
+
+        } catch (error) {
+          console.error('Error fetching data:', error);
+        }
+      }
+
+      saveData();
+      
+    }
+
+    const editInvoice = () => {
+
+      setErrors({})
+      const slug = invoice?.slug !== undefined ? invoice.slug : "";
+
+      const invoiceData:InvoiceType = {
+        bill_from_address:billFromAddress,
+        bill_from_city:billFromCity,
+        bill_from_country:billFromCountry,
+        bill_from_postcode:billFromPostcode,
+        bill_to_name:billToName,
+        bill_to_email:billToEmail,
+        bill_to_address:billToAddress,
+        bill_to_city:billToCity,
+        bill_to_country:billToCountry,
+        bill_to_postcode:billToPostcode,
+        invoice_date:new Date(billInvoiceDate.startDate || "").toISOString() ,
+        payment_terms:billToTerms,
+        project_description:billToDescription,
+        status:status,
+        slug:slug,
+        item_list:invoiceItems
+      }
+
+      const saveData = async() => {
+
+        setEditButtonText('Saving...')
+        try {
+          const response = await fetch('/api/invoice/'+slug,{
+            method:'POST', 
+            headers: {
+              'Content-Type': 'application/json', // Specify the content type as JSON
+            },
+            body: JSON.stringify(invoiceData), // Convert the object to JSON
+          });
+          const result = await response.json();
+
+          if(result.result == "failure"){
+            setErrors(result.errors)
+          } else {
+            toggleInvoiceFormVisible(false)
+            setFlashMessage('Invoice has been updated')
+            getInvoice(slug)
+          }
+          setEditButtonText('Save Changes')
+          
+
+        } catch (error) {
+          console.error('Error fetching data:', error);
+          setEditButtonText('Save Changes')
+        }
+      }
+
+      saveData();
+    }
+
     const createInvoiceItem = () => {
-      const newInvoiceItem:InvoiceItem = {
+      const newInvoiceItem:InvoiceItemType = {
         id:generateRandomString(20),
         name:"",
-        price:"0.00",
-        qty:0
+        price:0.00,
+        qty:0,
       }
 
       // Create a new array with the updated item
@@ -145,6 +322,24 @@ export default function InvoiceForm() {
     invoiceVisibleClass = ' hidden '
   }
 
+  const errorsToShowInBillFromPanel = [
+    "billFromAddress",
+    "billFromCity",
+    "billFromPostcode",
+    "billFromCountry",
+  ]
+
+  const errorsToShowInBillToPanel = [
+    "billToName",
+    "billToEmail",
+    "billToAddress",
+    "billToCity",
+    "billToPostcode",
+    "billToCountry",
+    "billToTerms",
+    "billToDescription"
+  ]
+
     return (
       <div className={"bg-lightbox-bg absolute left-0 h-full " + invoiceVisibleClass + " w-full z-20 transition-all"} >
         <div  className="invoice-edit-form bg-edit-form-bg md:w-[75%] xl:w-[36rem] h-screen flex flex-col lg:rounded-r-lg z-10 relative xl:ml-[6rem] " ref={wrapperRef}>
@@ -164,7 +359,8 @@ export default function InvoiceForm() {
                     placeholder="123 Baker Street"
                     value={billFromAddress}
                     onInputChange={setBillFromAddress}
-                    errors={{}}
+                    errors={errors}
+                    showErrorText={false}
                   />
                 </div>
                 <div className="col-span-1 row-span-1 ">
@@ -174,7 +370,8 @@ export default function InvoiceForm() {
                     placeholder="Glasgow"
                     value={billFromCity}
                     onInputChange={setBillFromCity}
-                    errors={{}}
+                    errors={errors}
+                    showErrorText={false}
                   />
                 </div>
                 <div className="col-span-1  row-span-1 ">
@@ -184,7 +381,8 @@ export default function InvoiceForm() {
                     placeholder="PA4 0LA"
                     value={billFromPostcode}
                     onInputChange={setBillFromPostcode}
-                    errors={{}}
+                    errors={errors}
+                    showErrorText={false}
                   />
                 </div>
                 <div className="col-span-2 lg:col-span-1 row-span-1 ">
@@ -194,11 +392,14 @@ export default function InvoiceForm() {
                     placeholder="UK"
                     value={billFromCountry}
                     onInputChange={setBillFromCountry}
-                    errors={{}}
+                    errors={errors}
+                    showErrorText={false}
                   />
                 </div>
               </div>
-
+              <div className="py-2">
+                <ErrorPanel errors={errors} toShow={errorsToShowInBillFromPanel} />
+              </div>
               <div className=" py-4">
                 <p className="text-primary heading-s mb-4">Bill To</p>
                 <div className="grid grid-cols-2 lg:grid-cols-3 grid-rows-2 gap-2">
@@ -209,7 +410,8 @@ export default function InvoiceForm() {
                       placeholder=""
                       value={billToName}
                       onInputChange={setBillToName}
-                      errors={{}}
+                      errors={errors}
+                      showErrorText={false}
                     />
                   </div>
                   <div className="row-span-1 col-span-3 my-2">
@@ -219,7 +421,8 @@ export default function InvoiceForm() {
                       placeholder="eg example@gmail.com"
                       value={billToEmail}
                       onInputChange={setBillToEmail}
-                      errors={{}}
+                      errors={errors}
+                      showErrorText={false}
                     />
                   </div>
 
@@ -230,7 +433,8 @@ export default function InvoiceForm() {
                       placeholder="10 Downing Street"
                       value={billToAddress}
                       onInputChange={setBillToAddress}
-                      errors={{"billToCity":"Please enter a value","billToAddress":"Please enter a value"}}
+                      errors={errors}
+                      showErrorText={false}
                     />
                   </div>
                   <div className="col-span-1 row-span-1 ">
@@ -240,7 +444,8 @@ export default function InvoiceForm() {
                       placeholder={formInputMap["billToCity"]["placeholder"]}
                       value={billToCity}
                       onInputChange={setBillToCity}
-                      errors={{"billToCity":"Please enter a value","billToAddress":"Please enter a value"}}
+                      errors={errors}
+                      showErrorText={false}
                     />
                   </div>
                   <div className="col-span-1  row-span-1 ">
@@ -250,7 +455,8 @@ export default function InvoiceForm() {
                       placeholder="NW1 1AA"
                       value={billToPostcode}
                       onInputChange={setBillToPostcode}
-                      errors={{}}
+                      errors={errors}
+                      showErrorText={false}
                     />
                   </div>
                   <div className="col-span-2 lg:col-span-1 row-span-1 ">
@@ -260,14 +466,13 @@ export default function InvoiceForm() {
                       placeholder="UK"
                       value={billToCountry}
                       onInputChange={setBillToCountry}
-                      errors={{}}
+                      errors={errors}
+                      showErrorText={false}
                     />
                   </div>
                 </div>
               </div>
-              <div className="py-2">
-                <ErrorPanel errors={{"billToCity":"Please enter a value","billToAddress":"Please enter a value"}} toShow={["billToCity","billToAddress"]} />
-              </div>
+              
               <div className=" py-4">
                 <div className="grid grid-cols-4 grid-rows-2 gap-2">
                   <div className="row-span-2 col-span-2 my-2">
@@ -283,10 +488,14 @@ export default function InvoiceForm() {
                       placeholder=""
                       value={billToDescription}
                       onInputChange={setBillToDescription}
-                      errors={{}}
+                      errors={errors}
+                      showErrorText={false}
                     />
                   </div>
                 </div>
+              </div>
+              <div className="py-2">
+                <ErrorPanel errors={errors} toShow={errorsToShowInBillToPanel} />
               </div>
               <div className="py-4">
                 <p className="text-primary heading-s mb-4">Item List</p>
@@ -324,7 +533,7 @@ export default function InvoiceForm() {
                       </tr>
                     </thead>
                     <tbody>
-                      {invoiceItems.map((item,i) => (
+                      {  invoiceItems.map((item,i) =>  (
                        <tr className="heading-s" key={"invoice-item-"+i}>
                         <td scope="row" className="pr-2 py-2">
                           <span className="text-heading-font ">
@@ -334,7 +543,8 @@ export default function InvoiceForm() {
                               placeholder=""
                               value={item.name}
                               onInputChange={(value) => handleInputChange(item.id,'name',value)}
-                              errors={{}}
+                              errors={errors}
+                              showErrorText={true}
                             />
                           </span>
                         </td>
@@ -344,20 +554,24 @@ export default function InvoiceForm() {
                             placeholder=""
                             value={item.qty}
                             onInputChange={(value) => handleInputChange(item.id,'qty',value)}
+                            errors={errors}
+                            id={"invoice-item-qty-"+i}
+                            showErrorText={true}
                           />
                         </td>
                         <td className="px-2 py-2 ">
-                          <TextInput
+                          <NumberInput
                             id={"invoice-item-price-"+i}
                             labelText=""
                             placeholder=""
                             value={item.price}
                             onInputChange={(value) => handleInputChange(item.id,'price',value)}
-                            errors={{}}
+                            errors={errors}
+                            showErrorText={true}
                           />
                         </td>
                         <td className="px-2 py-2">
-                          <span className="text-heading-font ">{item.price.length > 0 ? (parseFloat(item.price) * item.qty).toFixed(2) : 0 }</span>
+                          <span className="text-heading-font ">{(item.price * item.qty).toFixed(2)}</span>
                         </td>
                         <td>
                           <button onClick={(e) => removeInvoiceItem(i)}>
@@ -379,17 +593,32 @@ export default function InvoiceForm() {
               </div>
             </div>
             <div className="flex pt-8">
-              <button className="btn bg-edit-btn hover:bg-edit-bg-hover text-primary justify-center text-center " onClick={(e) => toggleInvoiceFormVisible(!isInvoiceFormVisible)}>
-                Discard
-              </button>
+              {typeof invoice !== "undefined" ?
 
-              <button className="btn bg-draft-font text-table-background hover:bg-draft-bg-hover justify-center text-center ml-auto mr-2">
-                Save as Draft
-              </button>
+              <Fragment>           
 
-              <button className="btn bg-primary text-white justify-center text-center hover:bg-primary-light duration-200">
-                Save & Send
-              </button>
+                <button className="btn bg-edit-btn hover:bg-edit-bg-hover text-primary justify-center text-center  ml-auto  mr-2" onClick={(e) => toggleInvoiceFormVisible(!isInvoiceFormVisible)}>
+                  Cancel
+                </button>
+                <button className="btn bg-draft-font text-table-background hover:bg-draft-bg-hover justify-center text-center mr-2" disabled={editBtnText=="Saving" ? true : false} onClick={(e) => editInvoice()}>
+                  {editBtnText}
+                </button>
+              </Fragment>
+              :
+              <Fragment>
+                <button className="btn bg-edit-btn hover:bg-edit-bg-hover text-primary justify-center text-center " onClick={(e) => toggleInvoiceFormVisible(!isInvoiceFormVisible)}>
+                  Discard
+                </button>
+
+                <button className="btn bg-draft-font text-table-background hover:bg-draft-bg-hover justify-center text-center ml-auto mr-2"  onClick={(e) => createInvoice("draft")}>
+                  {draftBtnText}
+                </button>
+
+                <button className="btn bg-primary text-white justify-center text-center hover:bg-primary-light duration-200" onClick={(e) => createInvoice("pending")}>
+                  {saveSendBtnText}
+                </button>
+              </Fragment>
+              }
             </div>
           </div>
         </div>

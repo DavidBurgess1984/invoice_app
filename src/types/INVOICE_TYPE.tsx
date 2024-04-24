@@ -1,5 +1,4 @@
 export interface InvoiceType {
-    id: string;
     bill_from_address: string,
     bill_from_city: string,
     bill_from_postcode: string,
@@ -14,14 +13,32 @@ export interface InvoiceType {
     payment_terms:number,
     project_description:string,
     item_list: InvoiceItemType[],
-    status:string
+    status:string,
+    slug:string
   }
   
 
   export interface InvoiceItemType {
+    id:string,
     name: string,
     qty: number,
     price: number
+  }
+
+  export interface invoiceItem {
+    id: string;
+    name: string;
+    qty: number | null;
+    price: number | null;
+    invoiceId: string | null;
+}
+
+  export interface InvoiceItemUpdateType {
+    name: string,
+    qty: number,
+    price: number,
+    id:string,
+    invoiceId:string|null|undefined
   }
 
   export interface InvoiceListProps {
@@ -30,4 +47,10 @@ export interface InvoiceType {
 
   export interface InvoiceProps {
     invoice: InvoiceType;
+  }
+
+  export interface InvoiceFilters {
+    draft: boolean;
+    pending: boolean;
+    paid: boolean;
   }

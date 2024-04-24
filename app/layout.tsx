@@ -8,6 +8,10 @@ import Header from '@/src/elements/header'
 import { LightboxProvider } from '@/src/providers/lightbox-provider'
 import { ThemeProvider, useTheme } from '@/src/providers/theme-provider'
 import App from './app'
+import { InvoiceProvider } from '@/src/providers/invoice-provider'
+import { FlashMessageProvider, useFlashMessage } from '@/src/providers/flash-message-provider'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
+import { useEffect } from 'react';
 const inter = Inter({ subsets: ['latin'] })
 
 
@@ -17,14 +21,18 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
 
-
+ 
   return (
-    <ThemeProvider>
-      <LightboxProvider>
-        <App>
-          {children}
-        </App>
-    </LightboxProvider>
-  </ThemeProvider>
+    <FlashMessageProvider>
+      <ThemeProvider>
+        <InvoiceProvider>
+        <LightboxProvider>
+          <App>
+            {children}
+          </App>
+        </LightboxProvider>
+      </InvoiceProvider>
+    </ThemeProvider>
+  </FlashMessageProvider>
   )
 }

@@ -8,49 +8,105 @@ import { InvoiceType } from '@/src/types/INVOICE_TYPE'
 import InvoiceStatusButton from '@/src/invoices/invoice-status-button'
 import { getInvoiceDueDate, getInvoiceTotal } from '@/src/utilities/invoice-helpers'
 import Link from 'next/link'
+import { useInvoice } from '@/src/providers/invoice-provider'
+import { useFlashMessage } from '@/src/providers/flash-message-provider'
+import { useRouter } from 'next/navigation'
 
 export default function Page({params}: { params: { invoice_slug: string } }) {
 
   const invoiceSlug = params.invoice_slug
   const {toggleInvoiceFormVisible} = useLightbox()
-  const [loading,setLoading] = useState(true)
-  const [invoice,setInvoice] = useState<InvoiceType | undefined>(undefined)
+  const {invoice,setInvoice,getInvoice,invoiceFormLoading} = useInvoice()
+  const {flashMessage} = useFlashMessage();
+
+  const router = useRouter()
+  const updateStatus = async(status:string) => {
+
+    try {
+      const response = await fetch('/api/invoice/toggle-status/'+invoiceSlug,{
+        method:'POST', 
+        headers: {
+          'Content-Type': 'application/json', // Specify the content type as JSON
+        },
+        body: JSON.stringify({status:status}), // Convert the object to JSON
+      });
+      const result = await response.json();
+
+      if(result){
+        getInvoice(invoiceSlug)
+      }
+
+      
+
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      // setEditButtonText('Save Changes')
+    }
+  }
+
+  const deleteInvoice = async() => {
+
+    const doDelete = window.confirm("This will delete this invoice.  Do you wish to continue?")
+
+    if(!doDelete){
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/invoice/'+invoiceSlug,{
+        method:'DELETE', 
+        headers: {
+          'Content-Type': 'application/json', // Specify the content type as JSON
+        },
+      });
+      const result = await response.json();
+
+      if(result){
+        router.push('/')
+      }
+
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      // setEditButtonText('Save Changes')
+    }
+  }
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch('/api/invoice/'+invoiceSlug);
-        const result = await response.json();
-        setInvoice(result);
-        setLoading(false)
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      }
+    const fetchData = () => {
+     getInvoice(invoiceSlug);
     };
 
     fetchData();
   }, [invoiceSlug]);
 
+  useEffect(() => {
+    return () => {
+      setInvoice(undefined)
+    }
+  },[])
+
   return (
     <Fragment>
-      {loading && 
+      {invoiceFormLoading && 
           <Loading />
         }
         
 
-        {!loading && invoice &&
+        {!invoiceFormLoading && invoice &&
       <Fragment>
           <div className="pt-6 xl:pb-6 xl:pt-12">
-            <div className="flex items-center">
+            <div className="flex items-center ">
               <Link href='/'>
               <Image
                 src={LeftArrow}
                 alt="left-arrow"
                 className="inline-block w-2 mr-4 mb-1"
               />
-              <span className="heading-s text-heading-font  duration-200 hover:text-primary-darker">Go Back</span>
+              <span className="heading-s text-heading-font  duration-200 hover:text-primary-darker inline-block mt-1">Go Back</span>
               </Link>
+              {flashMessage && <div className="inline-block ml-auto bg-success-font text-white py-1 px-8 rounded-sm">{flashMessage}</div>}
             </div>
+            
           </div>
 
           <div>
@@ -64,20 +120,20 @@ export default function Page({params}: { params: { invoice_slug: string } }) {
                   </button>
                 </div>
                 <div className="hidden md:block mr-2">
-                  <button className="btn bg-delete-bg text-white hover:bg-delete-bg-hover duration-200">Delete</button>
+                  <button className="btn bg-delete-bg text-white hover:bg-delete-bg-hover duration-200" onClick={(e) => deleteInvoice()}>Delete</button>
                 </div>
-                <div className="hidden md:block">
-                  <button className="btn bg-primary text-white hover:bg-primary-light duration-200">
-                    Mark as Paid
+                {invoice.status !== 'paid' && <div className="hidden md:block">
+                  <button className="btn bg-primary text-white hover:bg-primary-light duration-200" onClick={invoice.status === "draft" ? (e) => updateStatus('pending') : (e) => updateStatus('paid')}>
+                    {invoice.status === "draft" ? "Send Invoice" : "Mark as Paid" }
                   </button>
-                </div>
+                </div>}
 
             </div>
 
             <div className="bg-panel-bg rounded shadow p-8 md:p-16 text-primary-darker my-4 ">
               <div className="flex flex-col md:flex-row justify-between w-full mb-8">
                 <div className="mb-4 md:mb-0">
-                  #<span className=" text-heading-font heading-s">{invoice.id}</span>
+                  #<span className=" text-heading-font heading-s">{invoice.slug}</span>
                   <p className="body mt-1">{invoice.project_description}</p>
                 </div>
                 <div className="md:text-right body">
@@ -142,7 +198,7 @@ export default function Page({params}: { params: { invoice_slug: string } }) {
                     </thead>
                     <tbody>
                       {invoice.item_list.map((invoice_item,i) => (
-                        <tr className="heading-s">
+                        <tr className="heading-s" key={"invoice-item-"+i}>
                           <th scope="row" className="px-6 py-4 ">
                             <span className="text-heading-font ">
                               {invoice_item.name}
@@ -150,9 +206,9 @@ export default function Page({params}: { params: { invoice_slug: string } }) {
                             <span className="heading-s text-primary-darker block md:hidden">{invoice_item.qty} x ${invoice_item.price}</span>
                           </th>
                           <td className="px-6 py-4 text-right hidden md:table-cell ">{invoice_item.qty}</td>
-                          <td className="px-6 py-4 text-right hidden md:table-cell ">${invoice_item.price}</td>
+                          <td className="px-6 py-4 text-right hidden md:table-cell ">${invoice_item.price.toFixed(2)}</td>
                           <td className="px-6 py-4 text-right ">
-                            <span className="text-heading-font ">${invoice_item.price * invoice_item.qty}</span>
+                            <span className="text-heading-font ">${(invoice_item.price * invoice_item.qty).toFixed(2)}</span>
                           </td>
                         </tr>
                       ))}
@@ -171,18 +227,19 @@ export default function Page({params}: { params: { invoice_slug: string } }) {
 
             <div className='my-8 bg-white rounded shadow p-8 flex justify-between md:hidden '>
                 <div >
-                  <button className="btn bg-table-background text-primary text-center ">
+                  <button className="btn bg-table-background text-primary text-center " onClick={(e) => toggleInvoiceFormVisible(true)}>
                     Edit
                   </button>
                 </div>
                 <div >
-                  <button className="btn bg-delete-bg text-white">Delete</button>
+                  <button className="btn bg-delete-bg text-white"  onClick={(e) => deleteInvoice()}>Delete</button>
                 </div>
-                <div >
-                  <button className="btn bg-primary text-white">
-                    Mark as Paid
+                {invoice.status !== 'paid' && <div >
+                <button className="btn bg-primary text-white hover:bg-primary-light duration-200" onClick={invoice.status === "draft" ? (e) => updateStatus('pending') : (e) => updateStatus('paid')}>
+                    {invoice.status === "draft" ? "Send Invoice" : "Mark as Paid" }
                   </button>
                 </div>
+                }
               </div>
           </div>
       </Fragment>

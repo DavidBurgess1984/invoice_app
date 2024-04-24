@@ -4,14 +4,14 @@ import { InvoiceItemType } from "../types/INVOICE_TYPE";
 
 dayjs.extend(advancedFormat);
 
-export const getInvoiceTotal = (item_list: InvoiceItemType[]):number => {
+export const getInvoiceTotal = (item_list: InvoiceItemType[]):string => {
   let total = 0;
 
   item_list.forEach(item => {
     total += item.price * item.qty
   })
 
-  return total
+  return total.toFixed(2)
 }
 
 export const getInvoiceDueDate = (inputDate:string,daysToAdd?:number):string => {

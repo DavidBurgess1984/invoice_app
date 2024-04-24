@@ -21,10 +21,10 @@ const ErrorPanel: React.FC<ErrorPanelProps> = ({ toShow, errors }) => {
   return (
     <div className="w-full flex flex-col text-delete-bg">
       <h2 className="heading-s ">Error</h2>
-      {toShow.map((errorName) => {
-        if (typeof errors[errorName] !== undefined) {
+      {toShow.map((errorName,i) => {
+        if (typeof errors[errorName] !== "undefined") {
           return (
-            <p>
+            <p key={"error-"+i}>
               {formInputMap[errorName]["labelText"] + ": " + errors[errorName]}
             </p>
           );

@@ -1,9 +1,20 @@
 import Header from "@/src/elements/header";
 import InvoiceForm from "@/src/form/invoice-form";
+import { useFlashMessage } from "@/src/providers/flash-message-provider";
 import { useTheme } from "@/src/providers/theme-provider";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useEffect } from "react";
 
 export default function App({ children }: { children: React.ReactNode }) {
   const { isThemeDark } = useTheme();
+
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const {clearFlashMessage} = useFlashMessage()
+
+  useEffect(() => {
+      clearFlashMessage();
+  }, [pathname, searchParams]); // Ensure this effect runs only once on component mount
 
   return (
     <html className={isThemeDark ? "dark" : undefined}>
